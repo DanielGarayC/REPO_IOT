@@ -6,6 +6,6 @@ app -> aplicación
     /templates -> Vistas a utilizar en el proyecto
     /static -> estilos (css - js)
 
-python -m venv .venv      
+python -m venv .venv      / py --m venv .venv (alternativa si usan py)
 .venv\Scripts\Activate.ps1
 pip install -r requirements.txt

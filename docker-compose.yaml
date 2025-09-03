@@ -1,0 +1,33 @@
+
+services:
+  app:
+    container_name: app
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    environment:
+      # 👇 Ajusta el nombre de tu entrypoint Flask (app.py, main.py, etc.)
+      - FLASK_APP=app/app.py
+      - FLASK_ENV=development
+      - PYTHONUNBUFFERED=1
+    volumes:
+      # Hot-reload de tu código en desarrollo
+      - ./:/app
+    restart: unless-stopped
+    healthcheck:
+      # Requiere que tu app exponga /health (cámbialo o quítalo si no lo tienes)
+      test: ["CMD", "sh", "-c", "curl -fsS http://localhost:5000/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+    # ---------- PRODUCCIÓN (opcional) ----------
+    # Para producción, quita el volume y usa gunicorn:
+    # command: gunicorn -w 2 -b 0.0.0.0:5000 app:app
+    # environment:
+    #   - FLASK_ENV=production
+    #   - PYTHONUNBUFFERED=1
+    # # Si usas gunicorn, asegúrate que tu módulo sea "app:app" (módulo:objeto WSGI)
