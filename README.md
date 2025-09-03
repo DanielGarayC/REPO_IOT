@@ -5,3 +5,7 @@ app -> aplicación
     app.py -> backend principal
     /templates -> Vistas a utilizar en el proyecto
     /static -> estilos (css - js)
+
+python -m venv .venv      
+.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
