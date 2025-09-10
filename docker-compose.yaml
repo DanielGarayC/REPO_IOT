@@ -31,3 +31,17 @@ services:
     #   - FLASK_ENV=production
     #   - PYTHONUNBUFFERED=1
     # # Si usas gunicorn, asegúrate que tu módulo sea "app:app" (módulo:objeto WSGI)
+  mosquitto:
+    image: eclipse-mosquitto:2
+    container_name: mosquitto
+    ports:
+      - "1883:1883"
+  publisher:
+    build: ./mqtt-publisher
+    depends_on:
+      - mosquitto
+
+  subscriber:
+    build: ./mqtt-client
+    depends_on:
+      - mosquitto

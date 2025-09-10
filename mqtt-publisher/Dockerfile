@@ -1,10 +1,10 @@
 FROM python:3.11-slim
 
-WORKDIR /usr/src/subscriber
+WORKDIR /usr/src/publisher
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-CMD ["python", "client.py"]
+CMD ["python", "publisher.py"]
