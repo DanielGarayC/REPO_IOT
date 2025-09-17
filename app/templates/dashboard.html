@@ -206,25 +206,21 @@
         </div>
     </div>
 
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
     <script>
         // Chart.js configuration
         const ctx = document.getElementById('mainChart').getContext('2d');
 
-        // Generate sample data
-        const hours = [];
+        // Arrays para almacenar los datos históricos
+        const timeLabels = [];
         const tempData = [];
         const humidityData = [];
+        const MAX_POINTS = 24; // Últimas 24 muestras
 
-        for (let i = 23; i >= 0; i--) {
-            hours.push(`${23 - i}:00`);
-            tempData.push(20 + Math.random() * 8);
-            humidityData.push(45 + Math.random() * 30);
-        }
-
-        new Chart(ctx, {
+        const chart = new Chart(ctx, {
             type: 'line',
             data: {
-                labels: hours,
+                labels: timeLabels,
                 datasets: [
                     {
                         label: 'Temperatura (°C)',
@@ -296,6 +292,53 @@
             }
         });
 
+        // WebSocket para datos en tiempo real
+        const socket = io();
+        socket.on('sensor_update', function(data) {
+            // Usar solo la hora:minuto del timestamp
+            let label = data.timestamp;
+            if (label) {
+                try {
+                    const date = new Date(label);
+                    label = date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                } catch {}
+            }
+            // Agregar nuevo punto
+            timeLabels.push(label);
+            tempData.push(data.temperatura);
+            humidityData.push(data.humedad);
+            // Limitar a MAX_POINTS
+            if (timeLabels.length > MAX_POINTS) {
+                timeLabels.shift();
+                tempData.shift();
+                humidityData.shift();
+            }
+            chart.update('none');
+            // Actualizar tarjetas de stats y dispositivos
+            updateStatsAndDevices(data);
+        });
+
+        // Actualizar stats y dispositivos
+        function updateStatsAndDevices(data) {
+            // Temperatura Promedio
+            const tempStat = document.querySelector('.stat-card .stat-value');
+            if (tempStat && data.temperatura) tempStat.textContent = `${data.temperatura.toFixed(1)}°C`;
+            // Humedad Promedio
+            const humStat = document.querySelectorAll('.stat-card .stat-value')[1];
+            if (humStat && data.humedad) humStat.textContent = `${data.humedad.toFixed(0)}%`;
+            // Dispositivos activos (solo ejemplo, 1 sensor)
+            const devStat = document.querySelectorAll('.stat-card .stat-value')[2];
+            if (devStat) devStat.textContent = '1';
+            // Actualizar tarjetas de dispositivos
+            const deviceCards = document.querySelectorAll('.device-card');
+            deviceCards.forEach(card => {
+                if (card.textContent.includes(data.sensor_id)) {
+                    card.querySelectorAll('.metric-value')[0].textContent = `${data.temperatura.toFixed(1)}°C`;
+                    card.querySelectorAll('.metric-value')[1].textContent = `${data.humedad.toFixed(0)}%`;
+                }
+            });
+        }
+
         // Time selector functionality
         document.querySelectorAll('.time-btn').forEach(btn => {
             btn.addEventListener('click', function () {
@@ -304,13 +347,6 @@
                 this.classList.add('active');
             });
         });
-
-        // Real-time data simulation (placeholder)
-        function updateData() {
-            // Aquí harías fetch a tu backend Flask, por ejemplo:
-            // fetch('/api/sensors/data').then(r => r.json()).then(updateUI);
-        }
-        setInterval(updateData, 30000);
 
         // Entrance animations
         document.addEventListener('DOMContentLoaded', function () {
