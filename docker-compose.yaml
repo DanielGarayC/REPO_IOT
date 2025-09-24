@@ -45,3 +45,18 @@ services:
     build: ./mqtt-client
     depends_on:
       - mosquitto
+  mongodb:
+    image: mongo:7
+    container_name: mongodb
+    ports:
+      - "27017:27017"         # Exponlo solo en dev; en prod déjalo interno
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=rootpass
+    volumes:
+      - mongo_data:/data/db
+      - ./mongo-init:/docker-entrypoint-initdb.d:ro
+    restart: unless-stopped
+
+volumes:
+  mongo_data:
