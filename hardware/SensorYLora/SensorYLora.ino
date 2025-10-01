@@ -29,9 +29,14 @@ unsigned long lastSendTime = 0;
 const unsigned long sendInterval = 10000; // 10 segundos
 
 // --- Configuración DHT22 ---
-#define DHTPIN 21          // Pin donde está conectado el DHT22
+#define DHTPIN 21
 #define DHTTYPE DHT22
 DHT dht(DHTPIN, DHTTYPE);
+
+// --- Datos extra ---
+const uint16_t idSensor = 1;          // ID del sensor
+const double latitude = -12.061277;     // Latitud
+const double longitude = -77.077301;    // Longitud
 
 void setup() {
   Serial.begin(115200);
@@ -41,7 +46,6 @@ void setup() {
 }
 
 void loop() {
-
   // Enviar comandos de configuración secuencialmente
   if (!joined && cmdIndex < totalCmds && millis() - lastCmdTime > 3000) {
     Serial.print("ESP32 >> ");
@@ -57,8 +61,6 @@ void loop() {
     resp.trim();
     if (resp.length() > 0) {
       Serial.println("RAK >> " + resp);
-
-      // Detectar unión exitosa
       if (resp.indexOf("+EVT:JOINED") >= 0) {
         joined = true;
         Serial.println("✅ Unión exitosa a la red LoRaWAN!");
@@ -66,19 +68,26 @@ void loop() {
     }
   }
 
-  // Una vez unido, enviar valores de DHT22 periódicamente
+  // Enviar datos periódicamente
   if (joined && millis() - lastSendTime > sendInterval) {
     float h = dht.readHumidity();
     float t = dht.readTemperature();
 
     if (!isnan(h) && !isnan(t)) {
-      // Convertir a dos decimales y luego a entero (ej: 23.45 -> 2345)
-      int tInt = round(t * 100);
-      int hInt = round(h * 100);
+      int tInt = round(t * 100);      // temperatura en centésimas
+      int hInt = round(h * 100);      // humedad en centésimas
 
-      // Convertir a hex
-      char payload[9]; // 4 dígitos temp + 4 dígitos humedad
-      sprintf(payload, "%04X%04X", tInt, hInt);
+      // Coordenadas escaladas a 1e6
+      long latInt = (long)(latitude * 1e6);
+      long lonInt = (long)(longitude * 1e6);
+
+      // Buffer grande para todo el payload
+      char payload[64] = {0};
+
+      // Empaquetar: idSensor(4 hex) + temp(4 hex) + hum(4 hex) + lat(8 hex) + lon(8 hex)
+      sprintf(payload, "%04X%04X%04X%08lX%08lX", 
+              idSensor, tInt, hInt,
+              (uint32_t)latInt, (uint32_t)lonInt);
 
       String cmd = "AT+SEND=2:" + String(payload) + "\r\n";
       Serial.print("ESP32 >> ");
