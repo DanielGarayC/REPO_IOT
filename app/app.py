@@ -13,6 +13,10 @@ sensor_data_buffer = deque(maxlen=100)
 def dashboard():
     return render_template("dashboard.html")
 
+@app.route("/health")
+def health_check():
+    return "OK", 200
+
 @app.route("/api/sensors/last")
 def get_last_sensor():
     if sensor_data_buffer:
