@@ -8,12 +8,12 @@ services:
       - "5000:5000"
     environment:
       # 👇 Ajusta el nombre de tu entrypoint Flask (app.py, main.py, etc.)
-      - FLASK_APP=app/app.py
+      - FLASK_APP=app.py
       - FLASK_ENV=development
       - PYTHONUNBUFFERED=1
     volumes:
       # Hot-reload de tu código en desarrollo
-      - ./:/app
+      - ./app:/app
     restart: unless-stopped
     healthcheck:
       # Requiere que tu app exponga /health (cámbialo o quítalo si no lo tienes)
