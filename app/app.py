@@ -85,6 +85,10 @@ def mqtt_thread():
 def dashboard():
     return render_template("dashboard.html")
 
+@app.route("/health")
+def health_check():
+    return "OK", 200
+
 @app.route("/api/sensors/last")
 def get_last_sensor():
     if sensor_data_buffer:
@@ -94,4 +98,4 @@ def get_last_sensor():
 if __name__ == "__main__":
     t = threading.Thread(target=mqtt_thread, daemon=True)
     t.start()
-    socketio.run(app, debug=True)
+    socketio.run(app, debug=True, host="0.0.0.0", allow_unsafe_werkzeug=True)
