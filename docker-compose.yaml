@@ -1,32 +1,41 @@
+version: "3.8"
+
 services:
-  app:
-    container_name: app
+  proyectoiot:
+    container_name: proyectoiot
     build:
       context: ./app
       dockerfile: Dockerfile
     ports:
-      - "5000:5000"
+      - "80:5000"
+    env_file:
+      - .env
     environment:
-      # 👇 Ajusta el nombre de tu entrypoint Flask (app.py, main.py, etc.)
-      - FLASK_APP=app.py
-      - FLASK_ENV=development
+      # Valores que usa app.py
+      - SENSOR_DATA=${SENSOR_DATA}
+      - SENSOR_ID=${SENSOR_ID}
+      - PORT=${PORT}
+      # AWS (se leen desde .env)
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}
+      - FLASK_ENV=production
       - PYTHONUNBUFFERED=1
+
     volumes:
-      # Hot-reload de tu código en desarrollo
       - ./app:/app
-    restart: unless-stopped
+
+    restart: always
+
     healthcheck:
-      # Requiere que tu app exponga /health (cámbialo o quítalo si no lo tienes)
-      test: ["CMD", "sh", "-c", "curl -fsS http://localhost:5000/health || exit 1"]
+      test: ["CMD-SHELL", "curl -fsS http://localhost:5000/health || exit 1"]
       interval: 30s
       timeout: 5s
       retries: 3
       start_period: 10s
 
-    # ---------- PRODUCCIÓN (opcional) ----------
-    # Para producción, quita el volume y usa gunicorn:
-    # command: gunicorn -w 2 -b 0.0.0.0:5000 app:app
-    # environment:
-    #   - FLASK_ENV=production
-    #   - PYTHONUNBUFFERED=1
-    # # Si usas gunicorn, asegúrate que tu módulo sea "app:app" (módulo:objeto WSGI)
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
