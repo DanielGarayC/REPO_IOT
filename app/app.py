@@ -154,6 +154,88 @@ def list_sensors():
         return jsonify({"error": str(e)}), 500
 
 # ****************************************
+# -> VISTAS: DISPOSITIVOS
+# ****************************************
+
+@app.route("/dispositivos")
+def dispositivos():
+    """
+    Renderiza la vista HTML de gestión de dispositivos IoT.
+    """
+    return render_template("dispositivos.html")
+
+@app.route("/api/dispositivos", methods=["GET"])
+def listar_dispositivos():
+    """
+    Devuelve un listado de dispositivos registrados (mock temporal).
+    En una versión real, esto consultaría una tabla DynamoDB llamada 'Dispositivos'.
+    """
+    dispositivos = [
+        {
+            "id": "ac1f09fffe1397c9",
+            "nombre": "Sensor DHT22 #1",
+            "tipo": "Temperatura / Humedad",
+            "ubicacion": "Laboratorio GTI",
+            "estado": "activo",
+            "ultimo_registro": "2025-11-12T10:30:00"
+        },
+        {
+            "id": "ac1f09fffexxxxx1",
+            "nombre": "Sensor DHT22 #2",
+            "tipo": "Temperatura / Humedad",
+            "ubicacion": "Andahuaylillas",
+            "estado": "inactivo",
+            "ultimo_registro": "2025-11-11T22:15:00"
+        }
+    ]
+    return jsonify(dispositivos)
+
+# ****************************************
+# -> VISTA: NUEVO DISPOSITIVOS
+# ****************************************
+
+@app.route("/nuevo-dispositivo")
+def nuevo_dispositivo():
+    """
+    Renderiza el formulario para registrar un nuevo dispositivo IoT.
+    """
+    return render_template("nuevo_dispositivo.html")
+
+@app.route("/api/dispositivos", methods=["POST"])
+def crear_dispositivo():
+    """
+    Registra un nuevo dispositivo (por ahora simulado).
+    En producción se guardaría en DynamoDB en la tabla 'Dispositivos'.
+    """
+    try:
+        data = request.get_json()
+        device_id = data.get("id")
+        nombre = data.get("nombre")
+        tipo = data.get("tipo")
+        ubicacion = data.get("ubicacion")
+        estado = data.get("estado")
+
+        if not device_id or not nombre:
+            return jsonify({"error": "El ID y el nombre son obligatorios"}), 400
+
+        # Simulación de guardado (a futuro se hará put_item en DynamoDB)
+        print("📡 Nuevo dispositivo recibido:", data)
+
+        # Aquí iría, por ejemplo:
+        # table_devices.put_item(Item=data)
+
+        return jsonify({
+            "message": "Dispositivo registrado correctamente",
+            "data": data
+        }), 201
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+
+
+# ****************************************
 # -> EJECUCIÓN PRINCIPAL    
 # ****************************************
 if __name__ == "__main__":

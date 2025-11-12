@@ -293,4 +293,56 @@
     animateEntrance();
   });
 
+  // Envío de formulario para crear dispositivo
+  document.addEventListener('DOMContentLoaded', () => {
+    const form = document.getElementById('form-nuevo-dispositivo');
+    const resultBox = document.getElementById('result-message');
+    if (!form) return; // Evita errores si este script carga en otra vista
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      resultBox.classList.remove('success', 'error');
+      resultBox.textContent = '';
+
+      const payload = {
+        id: document.getElementById('deviceId').value.trim(),
+        nombre: document.getElementById('deviceName').value.trim(),
+        tipo: document.getElementById('deviceType').value.trim(),
+        ubicacion: document.getElementById('deviceLocation').value.trim(),
+        estado: document.getElementById('deviceStatus').value
+      };
+
+      try {
+        const res = await fetch('/api/dispositivos', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+        if (res.ok) {
+          resultBox.textContent = data.message || '¡Dispositivo registrado!';
+          resultBox.classList.add('success');
+          resultBox.classList.remove('hidden');
+
+          // Redirige después de unos segundos
+          setTimeout(() => {
+            window.location.href = '/dispositivos';
+          }, 1500);
+        } else {
+          resultBox.textContent = data.error || 'Error al registrar.';
+          resultBox.classList.add('error');
+          resultBox.classList.remove('hidden');
+        }
+      } catch (err) {
+        resultBox.textContent = 'Error al conectar con el servidor.';
+        resultBox.classList.add('error');
+        resultBox.classList.remove('hidden');
+      }
+    });
+
+
+  });
+
+
 })();

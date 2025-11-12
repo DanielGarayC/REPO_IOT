@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Dispositivos IoT</title>
+
+    <!-- Fonts & Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+
+    <!-- Estilos -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}"/>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="nav-content">
+            <div class="logo">
+                <i class="fas fa-thermometer-half"></i>
+                Proyecto-IoT
+            </div>
+            <ul class="nav-links">
+                <li><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                <li><a class="active">Dispositivos</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="dashboard-header">
+            <h1 class="dashboard-title">Gestión de Dispositivos IoT</h1>
+            <p class="dashboard-subtitle">Administra los sensores conectados al sistema</p>
+        </div>
+
+        <!-- Botón agregar -->
+        <div style="text-align:right; margin-bottom:20px;">
+            <button class="btn-add-device" id="btnNuevoDispositivo" data-url="{{ url_for('nuevo_dispositivo') }}">
+                <i class="fas fa-plus"></i> Nuevo dispositivo
+            </button>
+        </div>
+
+        <!-- Tabla de dispositivos -->
+        <div class="devices-table animate__animated animate__fadeIn">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nombre</th>
+                        <th>Tipo</th>
+                        <th>Ubicación</th>
+                        <th>Estado</th>
+                        <th>Último registro</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Ejemplo de fila -->
+                    <tr>
+                        <td>ac1f09fffe1397c9</td>
+                        <td>Sensor DHT22 #1</td>
+                        <td>Temperatura / Humedad</td>
+                        <td>Laboratorio GTI</td>
+                        <td><span class="status-active"><i class="fas fa-check-circle"></i> Activo</span></td>
+                        <td>12/11/2025 10:30</td>
+                        <td>
+                            <button class="btn-edit"><i class="fas fa-edit"></i></button>
+                            <button class="btn-delete"><i class="fas fa-trash"></i></button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>ac1f09fffexxxxx1</td>
+                        <td>Sensor DHT22 #2</td>
+                        <td>Temperatura / Humedad</td>
+                        <td>Andahuaylillas</td>
+                        <td><span class="status-inactive"><i class="fas fa-times-circle"></i> Inactivo</span></td>
+                        <td>11/11/2025 22:15</td>
+                        <td>
+                            <button class="btn-edit"><i class="fas fa-edit"></i></button>
+                            <button class="btn-delete"><i class="fas fa-trash"></i></button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Modal para agregar/editar (se activará luego con JS/Flask) -->
+        <div class="modal hidden" id="deviceModal">
+            <div class="modal-content">
+                <h2 id="modalTitle">Nuevo dispositivo</h2>
+                <form id="deviceForm">
+                    <label>Nombre:</label>
+                    <input type="text" id="deviceName" placeholder="Ej. Sensor DHT22 #3" required/>
+
+                    <label>Tipo:</label>
+                    <input type="text" id="deviceType" placeholder="Ej. Temperatura / Humedad" required/>
+
+                    <label>Ubicación:</label>
+                    <input type="text" id="deviceLocation" placeholder="Ej. Laboratorio GTI" required/>
+
+                    <label>Estado:</label>
+                    <select id="deviceStatus">
+                        <option value="activo">Activo</option>
+                        <option value="inactivo">Inactivo</option>
+                    </select>
+
+                    <div class="modal-actions">
+                        <button type="submit" class="btn-save">Guardar</button>
+                        <button type="button" class="btn-cancel" id="btnCancel">Cancelar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const btn = document.getElementById('btnNuevoDispositivo');
+            if (!btn) return; // por si el script carga en otra vista
+
+            btn.addEventListener('click', () => {
+            const url = btn.dataset.url; // <- viene del HTML renderizado
+            if (url) window.location.href = url;
+            });
+        });
+
+    </script>
+
+
+
+</body>
+</html>

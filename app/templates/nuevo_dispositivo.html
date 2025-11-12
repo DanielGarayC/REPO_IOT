@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Nuevo Dispositivo</title>
+
+    <!-- Fonts & Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+
+    <!-- Estilos -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}"/>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="nav-content">
+            <div class="logo">
+                <i class="fas fa-thermometer-half"></i>
+                Proyecto-IoT
+            </div>
+            <ul class="nav-links">
+                <li><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                <li><a href="{{ url_for('dispositivos') }}">Dispositivos</a></li>
+                <li><a href="#" class="active">Nuevo</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Contenedor principal -->
+    <div class="container animate__animated animate__fadeIn">
+        <div class="dashboard-header">
+            <h1 class="dashboard-title">Registrar nuevo dispositivo</h1>
+            <p class="dashboard-subtitle">Completa los datos para agregar un nuevo sensor IoT al sistema</p>
+        </div>
+
+        <!-- Formulario -->
+        <div class="form-card">
+            <form id="form-nuevo-dispositivo">
+                <div class="form-group">
+                    <label for="deviceId">ID del dispositivo <span class="req">*</span></label>
+                    <input type="text" id="deviceId" placeholder="Ej. ac1f09fffe1397c9" required/>
+                </div>
+
+                <div class="form-group">
+                    <label for="deviceName">Nombre del dispositivo <span class="req">*</span></label>
+                    <input type="text" id="deviceName" placeholder="Ej. Sensor DHT22 #3" required/>
+                </div>
+
+                <div class="form-group">
+                    <label for="deviceType">Tipo</label>
+                    <input type="text" id="deviceType" placeholder="Ej. Temperatura / Humedad"/>
+                </div>
+
+                <div class="form-group">
+                    <label for="deviceLocation">Ubicación</label>
+                    <input type="text" id="deviceLocation" placeholder="Ej. Laboratorio GTI"/>
+                </div>
+
+                <div class="form-group">
+                    <label for="deviceStatus">Estado</label>
+                    <select id="deviceStatus">
+                        <option value="activo">Activo</option>
+                        <option value="inactivo">Inactivo</option>
+                    </select>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn-save">
+                        <i class="fas fa-save"></i> Guardar
+                    </button>
+                    <a href="{{ url_for('dispositivos') }}" class="btn-cancel">
+                        <i class="fas fa-arrow-left"></i> Volver
+                    </a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Mensaje de resultado -->
+        <div id="result-message" class="hidden"></div>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
