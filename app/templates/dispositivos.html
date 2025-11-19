@@ -12,6 +12,364 @@
 
     <!-- Estilos -->
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}"/>
+    
+    <style>
+        /* Mejoras visuales adicionales */
+        .devices-header-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .devices-stats {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .mini-stat {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 15px 25px;
+            border-radius: 12px;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 4px 6px rgba(102, 126, 234, 0.3);
+            transition: transform 0.3s ease;
+        }
+
+        .mini-stat:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .mini-stat.warning {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .mini-stat i {
+            font-size: 24px;
+            opacity: 0.9;
+        }
+
+        .mini-stat-content h4 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .mini-stat-content p {
+            margin: 0;
+            font-size: 12px;
+            opacity: 0.9;
+        }
+
+        .btn-add-device {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-add-device:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+        }
+
+        .btn-add-device i {
+            font-size: 16px;
+        }
+
+        .devices-table {
+            background: white;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
+        }
+
+        .devices-table table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .devices-table thead {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .devices-table th {
+            color: white;
+            padding: 18px 20px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .devices-table tbody tr {
+            border-bottom: 1px solid #f1f5f9;
+            transition: all 0.2s ease;
+        }
+
+        .devices-table tbody tr:hover {
+            background: linear-gradient(90deg, #f8fafc 0%, #f1f5f9 100%);
+            transform: scale(1.01);
+        }
+
+        .devices-table td {
+            padding: 20px;
+            font-size: 14px;
+            color: #334155;
+        }
+
+        .status-active {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+            color: #059669;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .status-inactive {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+            color: #dc2626;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .btn-edit, .btn-delete {
+            padding: 10px 14px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+            margin-right: 8px;
+        }
+
+        .btn-edit {
+            background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+            color: white;
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+        }
+
+        .btn-edit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+        }
+
+        .btn-delete {
+            background: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
+            color: white;
+            box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+        }
+
+        .btn-delete:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.hidden {
+            display: none;
+        }
+
+        .modal:not(.hidden) {
+            display: flex;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from { 
+                transform: translateY(30px);
+                opacity: 0;
+            }
+            to { 
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-content h2 {
+            margin: 0 0 30px 0;
+            color: #1e293b;
+            font-size: 28px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .modal-content form label {
+            display: block;
+            margin-top: 20px;
+            margin-bottom: 8px;
+            color: #475569;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .modal-content form input,
+        .modal-content form select {
+            width: 100%;
+            padding: 14px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .modal-content form input:focus,
+        .modal-content form select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 30px;
+        }
+
+        .btn-save, .btn-cancel {
+            flex: 1;
+            padding: 14px;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-save {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-save:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+        }
+
+        .btn-cancel {
+            background: #f1f5f9;
+            color: #64748b;
+        }
+
+        .btn-cancel:hover {
+            background: #e2e8f0;
+            transform: translateY(-2px);
+        }
+
+        .device-id-badge {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            color: #475569;
+            font-weight: 600;
+        }
+
+        .device-type-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            background: linear-gradient(135deg, #ddd6fe 0%, #c4b5fd 100%);
+            color: #6d28d9;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .location-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: #64748b;
+            font-weight: 500;
+        }
+
+        .location-badge i {
+            color: #94a3b8;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .devices-header-section {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .devices-stats {
+                justify-content: center;
+            }
+
+            .devices-table {
+                overflow-x: auto;
+            }
+
+            .modal-content {
+                padding: 30px 20px;
+            }
+        }
+    </style>
 </head>
 <body>
     <!-- Navbar -->
@@ -34,8 +392,25 @@
             <p class="dashboard-subtitle">Administra los sensores conectados al sistema</p>
         </div>
 
-        <!-- Botón agregar -->
-        <div style="text-align:right; margin-bottom:20px;">
+        <!-- Header con stats y botón -->
+        <div class="devices-header-section">
+            <div class="devices-stats">
+                <div class="mini-stat">
+                    <i class="fas fa-microchip"></i>
+                    <div class="mini-stat-content">
+                        <h4>2</h4>
+                        <p>Total Dispositivos</p>
+                    </div>
+                </div>
+                <div class="mini-stat warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <div class="mini-stat-content">
+                        <h4>1</h4>
+                        <p>Inactivos</p>
+                    </div>
+                </div>
+            </div>
+            
             <button class="btn-add-device" id="btnNuevoDispositivo" data-url="{{ url_for('nuevo_dispositivo') }}">
                 <i class="fas fa-plus"></i> Nuevo dispositivo
             </button>
@@ -46,68 +421,67 @@
             <table>
                 <thead>
                     <tr>
-                        <th>ID</th>
-                        <th>Nombre</th>
-                        <th>Tipo</th>
-                        <th>Ubicación</th>
-                        <th>Estado</th>
-                        <th>Último registro</th>
-                        <th>Acciones</th>
+                        <th><i class="fas fa-hashtag"></i> ID</th>
+                        <th><i class="fas fa-tag"></i> Nombre</th>
+                        <th><i class="fas fa-microchip"></i> Tipo</th>
+                        <th><i class="fas fa-map-marker-alt"></i> Ubicación</th>
+                        <th><i class="fas fa-signal"></i> Estado</th>
+                        <th><i class="fas fa-clock"></i> Último registro</th>
+                        <th><i class="fas fa-cog"></i> Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <!-- Ejemplo de fila -->
-                    <tr>
-                        <td>ac1f09fffe1397c9</td>
-                        <td>Sensor DHT22 #1</td>
-                        <td>Temperatura / Humedad</td>
-                        <td>Laboratorio GTI</td>
+                    <tr class="animate__animated animate__fadeInUp" style="animation-delay: 0.1s">
+                        <td><span class="device-id-badge">ac1f09fffe1397c9</span></td>
+                        <td><strong>Sensor DHT22 #1</strong></td>
+                        <td><span class="device-type-badge"><i class="fas fa-thermometer-half"></i> Temperatura / Humedad</span></td>
+                        <td><span class="location-badge"><i class="fas fa-map-marker-alt"></i> Laboratorio GTI</span></td>
                         <td><span class="status-active"><i class="fas fa-check-circle"></i> Activo</span></td>
                         <td>12/11/2025 10:30</td>
                         <td>
-                            <button class="btn-edit"><i class="fas fa-edit"></i></button>
-                            <button class="btn-delete"><i class="fas fa-trash"></i></button>
+                            <button class="btn-edit" title="Editar"><i class="fas fa-edit"></i></button>
+                            <button class="btn-delete" title="Eliminar"><i class="fas fa-trash"></i></button>
                         </td>
                     </tr>
-                    <tr>
-                        <td>ac1f09fffexxxxx1</td>
-                        <td>Sensor DHT22 #2</td>
-                        <td>Temperatura / Humedad</td>
-                        <td>Andahuaylillas</td>
+                    <tr class="animate__animated animate__fadeInUp" style="animation-delay: 0.2s">
+                        <td><span class="device-id-badge">ac1f09fffexxxxx1</span></td>
+                        <td><strong>Sensor DHT22 #2</strong></td>
+                        <td><span class="device-type-badge"><i class="fas fa-thermometer-half"></i> Temperatura / Humedad</span></td>
+                        <td><span class="location-badge"><i class="fas fa-map-marker-alt"></i> Andahuaylillas</span></td>
                         <td><span class="status-inactive"><i class="fas fa-times-circle"></i> Inactivo</span></td>
                         <td>11/11/2025 22:15</td>
                         <td>
-                            <button class="btn-edit"><i class="fas fa-edit"></i></button>
-                            <button class="btn-delete"><i class="fas fa-trash"></i></button>
+                            <button class="btn-edit" title="Editar"><i class="fas fa-edit"></i></button>
+                            <button class="btn-delete" title="Eliminar"><i class="fas fa-trash"></i></button>
                         </td>
                     </tr>
                 </tbody>
             </table>
         </div>
 
-        <!-- Modal para agregar/editar (se activará luego con JS/Flask) -->
+        <!-- Modal para agregar/editar -->
         <div class="modal hidden" id="deviceModal">
             <div class="modal-content">
                 <h2 id="modalTitle">Nuevo dispositivo</h2>
                 <form id="deviceForm">
-                    <label>Nombre:</label>
+                    <label><i class="fas fa-tag"></i> Nombre:</label>
                     <input type="text" id="deviceName" placeholder="Ej. Sensor DHT22 #3" required/>
 
-                    <label>Tipo:</label>
+                    <label><i class="fas fa-microchip"></i> Tipo:</label>
                     <input type="text" id="deviceType" placeholder="Ej. Temperatura / Humedad" required/>
 
-                    <label>Ubicación:</label>
+                    <label><i class="fas fa-map-marker-alt"></i> Ubicación:</label>
                     <input type="text" id="deviceLocation" placeholder="Ej. Laboratorio GTI" required/>
 
-                    <label>Estado:</label>
+                    <label><i class="fas fa-signal"></i> Estado:</label>
                     <select id="deviceStatus">
                         <option value="activo">Activo</option>
                         <option value="inactivo">Inactivo</option>
                     </select>
 
                     <div class="modal-actions">
-                        <button type="submit" class="btn-save">Guardar</button>
-                        <button type="button" class="btn-cancel" id="btnCancel">Cancelar</button>
+                        <button type="submit" class="btn-save"><i class="fas fa-check"></i> Guardar</button>
+                        <button type="button" class="btn-cancel" id="btnCancel"><i class="fas fa-times"></i> Cancelar</button>
                     </div>
                 </form>
             </div>
@@ -119,17 +493,13 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const btn = document.getElementById('btnNuevoDispositivo');
-            if (!btn) return; // por si el script carga en otra vista
+            if (!btn) return;
 
             btn.addEventListener('click', () => {
-            const url = btn.dataset.url; // <- viene del HTML renderizado
-            if (url) window.location.href = url;
+                const url = btn.dataset.url;
+                if (url) window.location.href = url;
             });
         });
-
     </script>
-
-
-
 </body>
 </html>
