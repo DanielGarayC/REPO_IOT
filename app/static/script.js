@@ -8,6 +8,8 @@
   let currentSensorId = null;
   let currentSensorName = null;
   let currentFilter = '1h';
+  // mapa local de metadata de sensores (sensor_id -> objeto desde /api/sensors/info)
+  let sensorInfoMap = {};
 
   // Elementos del DOM
   const statAvgTemp = document.getElementById('stat-avg-temp');
@@ -358,18 +360,27 @@
         }
       });
 
+      // construir mapa local de metadatos
+      list.forEach(s => { sensorInfoMap[s.sensor_id] = s; });
+
       // seleccionar el primero y disparar carga inicial
       sel.value = currentSensorId;
       sensorSelectEl = sel;
       // mostrar nombre e id en la tarjeta grande
       if (statSensorNameEl) statSensorNameEl.textContent = currentSensorName || currentSensorId || '—';
-      if (statSensorIdEl) statSensorIdEl.textContent = currentSensorId || '';
+      if (statSensorIdEl) {
+        const loc = (sensorInfoMap[currentSensorId] && sensorInfoMap[currentSensorId].location) || '';
+        statSensorIdEl.innerHTML = `${currentSensorId || ''}${loc ? `<div class="stat-location" style="margin-top:6px; font-size:0.85rem;">${loc}</div>` : ''}`;
+      }
       sel.addEventListener('change', (e) => {
         currentSensorId = e.target.value;
         const selected = list.find(x=>x.sensor_id===currentSensorId);
         currentSensorName = selected ? (selected.name || selected.sensor_id) : currentSensorId;
         if (statSensorNameEl) statSensorNameEl.textContent = currentSensorName || currentSensorId || '—';
-        if (statSensorIdEl) statSensorIdEl.textContent = currentSensorId || '';
+        if (statSensorIdEl) {
+          const loc = (selected && selected.location) || (sensorInfoMap[currentSensorId] && sensorInfoMap[currentSensorId].location) || '';
+          statSensorIdEl.innerHTML = `${currentSensorId || ''}${loc ? `<div class="stat-location" style="margin-top:6px; font-size:0.85rem;">${loc}</div>` : ''}`;
+        }
         // refrescar la info manteniendo el filtro actual
         fetchLastAndUpdate();
         fetchListAndPlot(currentFilter || '1h');
