@@ -26,6 +26,7 @@
             </div>
             <ul class="nav-links">
                 <li><a class="active">Dashboard</a></li>
+                <li><a href="{{url_for('comparar')}}">Comparar</a></li>
                 <li><a href="{{url_for('dispositivos')}}">Dispositivos</a></li>
 
             </ul>
@@ -67,16 +68,23 @@
 
             <div class="stat-card">
                 <div class="stat-header">
-                    <span class="stat-title">Dispositivos Activos</span>
-                    <div class="stat-icon" style="background: linear-gradient(135deg, #8b5cf6, #a855f7); color: white;">
+                    <span class="stat-title">Dispositivo Actual</span>
+                    <div class="stat-icon sensor-icon" style="background: linear-gradient(135deg, #8b5cf6, #a855f7); color: white;">
                         <i class="fas fa-microchip"></i>
                     </div>
+                    <!-- select overlay: hidden visually but positioned over the icon so clicking icon opens it -->
+                    <select id="sensor-select" class="sensor-select-overlay">
+                        <option value="">Cargando sensores...</option>
+                    </select>
                 </div>
-                <div class="stat-value" id="stat-sensor">ac1f09fffe1397c9</div>
+                <div class="stat-value" id="stat-sensor">
+                    <div id="stat-sensor-name">—</div>
+                    <div id="stat-sensor-id" class="stat-sensor-id">&nbsp;</div>
+                </div>
                 <div class="stat-info">
                     <span class="stat-location">Sensor de humedad y temperatura</span>
                     <span class="stat-trend" style="background: #f0fdf4; color: #16a34a;">
-                        <i class="fas fa-check"></i> Conectado
+                        <i class="fas fa-check"></i> Funcional
                     </span>
                 </div>
             </div>
@@ -145,7 +153,7 @@
                         <div class="metric-label">Temperatura (min)</div>
                     </div>
                     <div class="metric">
-                        <div class="metric-value">-</div>
+                        <div class="metric-value" id="global-min-hum">-</div>
                         <div class="metric-label">Humedad (min)</div>
                     </div>
                 </div>

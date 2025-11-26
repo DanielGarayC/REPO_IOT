@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Comparación de Sensores</title>
+
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <!-- Reuse the dashboard base styles and then small comparison overrides -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}"/>
+    <link rel="stylesheet" href="{{ url_for('static', filename='compare.css') }}"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-content">
+            <div class="logo">
+                <i class="fas fa-thermometer-half"></i>
+                Proyecto-IoT
+            </div>
+            <ul class="nav-links">
+                <li><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                <li><a class="active">Comparar</a></li>
+                <li><a href="{{ url_for('dispositivos') }}">Dispositivos</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="dashboard-header">
+            <h1 class="dashboard-title">Comparación entre Sensores</h1>
+            <p class="dashboard-subtitle">Visualiza y compara series temporales entre sensores, con insights automáticos</p>
+        </div>
+
+        <div class="controls-grid">
+            <div class="control-card animate__animated animate__fadeInUp">
+                <h3 class="control-label">Sensor A</h3>
+                <select id="compare-sensor-a" class="control-select"></select>
+            </div>
+            <div class="control-card animate__animated animate__fadeInUp">
+                <h3 class="control-label">Sensor B</h3>
+                <select id="compare-sensor-b" class="control-select"></select>
+            </div>
+            <div class="control-card animate__animated animate__fadeInUp">
+                <h3 class="control-label">Periodo</h3>
+                <div class="time-selector">
+                    <button class="time-btn active">1H</button>
+                    <button class="time-btn">24H</button>
+                    <button class="time-btn">7D</button>
+                    <button class="time-btn">30D</button>
+                </div>
+            </div>
+            <div class="control-card actions animate__animated animate__fadeInUp">
+                <h3 class="control-label">Acciones</h3>
+                <div class="actions-row">
+                    <button id="btn-compare" class="btn-compare">Comparar</button>
+                    <button id="btn-reset" class="btn-reset">Limpiar</button>
+                    <button id="btn-export-csv" class="btn-export-csv">Exportar CSV</button>
+                    <button id="btn-export-xlsx" class="btn-export-xlsx">Exportar Excel</button>
+                    <button id="btn-export-pdf" class="btn-export-pdf">Exportar Reporte (PDF)</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="compare-grid">
+            <div class="insights card animate__animated animate__fadeInUp">
+                <h3 class="card-title">Insights & Resumen</h3>
+                <div id="insights-area">
+                    <p>Seleccione dos sensores y presione "Comparar" para ver estadísticas y diferencias.</p>
+                </div>
+            </div>
+
+            <div class="compare-chart card animate__animated animate__fadeInUp">
+                <h3 class="card-title">Temperatura / Humedad (comparado)</h3>
+                <div class="chart-area">
+                    <canvas id="compareChart"></canvas>
+                </div>
+            </div>
+
+        
+        </div>
+
+        <div class="details-grid single-column">
+            <div class="card sensors-list animate__animated animate__fadeInUp">
+                <h3 class="card-title">Lista de Sensores</h3>
+                <div id="sensors-list-area"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Export libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <script src="{{ url_for('static', filename='compare.js') }}"></script>
+</body>
+</html>

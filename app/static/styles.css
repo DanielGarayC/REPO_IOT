@@ -135,6 +135,9 @@ body {
     margin-bottom: 1rem;
 }
 
+/* make stat-header positioning context so we can absolutely place the select overlay */
+.stat-header { position: relative; }
+
 .stat-title {
     font-size: 0.9rem;
     font-weight: 600;
@@ -170,10 +173,58 @@ body {
     margin-bottom: 0.5rem;
 }
 
+/* sensor name shown in the stat-value area */
+#stat-sensor-name { font-size: 2.4rem; font-weight: 700; color: #1e293b; }
+#stat-sensor-id { font-size: 0.85rem; color: #64748b; margin-top: 6px; }
+
+/* select overlay placed over the icon so clicks on the icon open the select */
+.sensor-select-overlay {
+    position: absolute;
+    right: 12px; /* aligns over the icon's area */
+    top: 10px;
+    width: 40px;
+    height: 40px;
+    opacity: 0; /* visually hidden but still clickable */
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+}
+
+/* fallback visible small select when overlay unsupported (keeps layout tidy) */
+@media (min-width: 0px) {
+    .sensor-select-overlay:focus { outline: none; }
+}
+
 .stat-info {
     display: flex;
     justify-content: space-between;
     align-items: center;
+}
+
+/* Make the sensor icon feel more interactive: a smooth 'pop' on hover that stays while
+   the cursor is over the header (so clicking the invisible select keeps it elevated). */
+.sensor-icon {
+    transition: transform 220ms cubic-bezier(.2,.9,.2,1), box-shadow 220ms cubic-bezier(.2,.9,.2,1);
+}
+.sensor-icon:hover,
+.stat-header:hover .sensor-icon {
+    transform: translateY(-6px);
+    box-shadow: 0 18px 30px rgba(16,37,84,0.12);
+}
+
+/* If the select becomes visible on some browsers, make it look less square */
+.sensor-select-overlay {
+    border-radius: 10px;
+    background: rgba(255,255,255,0.02);
+    box-shadow: 0 6px 18px rgba(16,37,84,0.06);
+}
+
+/* Round other selects in forms/modals to be consistent */
+.modal-content select,
+.form-group select {
+    border-radius: 8px;
 }
 
 .stat-location {

@@ -1,0 +1,308 @@
+/* Comparison-specific overrides only.
+	 The main layout, colors and typography are inherited from styles.css (dashboard).
+	 Keep these rules minimal and focused on layout/controls unique to the comparison view. */
+
+.controls-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.2rem;
+    align-items: center
+}
+
+.control-card {
+    padding: 0.8rem;
+    border-radius: 10px;
+    background: var(--card-bg, rgba(255, 255, 255, 0.95));
+    box-shadow: var(--card-shadow, 0 8px 24px rgba(0, 0, 0, 0.06));
+    display: flex;
+    flex-direction: column;
+    justify-content: center
+}
+
+.control-label {
+    display: block;
+    font-size: 0.85rem;
+    color: #475569;
+    margin-bottom: 6px
+}
+
+.control-select {
+    width: 100%;
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid #e6eef8;
+    font-size: 0.95rem;
+    background: #fff
+}
+
+.time-selector {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 6px
+}
+
+.time-btn {
+    padding: 8px 12px;
+    border-radius: 10px;
+    border: none;
+    background: #f1f5f9;
+    color: #64748b;
+    cursor: pointer;
+    font-weight: 600
+}
+
+.time-btn.active {
+    background: #102454;
+    color: #fff
+}
+
+.compare-grid {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 1rem;
+    align-items: start
+}
+
+.card {
+    padding: 1.25rem;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.975);
+    box-shadow: 0 10px 40px rgba(2, 6, 23, 0.06)
+}
+
+.card-title {
+    font-size: 1.05rem;
+    color: #0f172a;
+    margin-bottom: 0.8rem;
+    text-align: center
+}
+
+.chart-area {
+    height: 520px;
+    display: flex;
+    align-items: center;
+    justify-content: center
+}
+
+.insights {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start
+}
+
+.insights p {
+    color: #475569;
+    text-align: center
+}
+
+.insights .stat-row {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: center
+}
+
+.insights .stat-pill {
+    background: #f1f5f9;
+    padding: 10px;
+    border-radius: 10px;
+    color: #0f172a;
+    font-weight: 700;
+    min-width: 160px;
+    text-align: center
+}
+
+.insights .stat-pill.sensor-a {
+    background: #fff1ef; /* slightly stronger warm pastel */
+    color: #0f172a;
+    border: 1px solid rgba(255, 99, 132, 0.12);
+    box-shadow: 0 3px 10px rgba(255,99,132,0.03);
+}
+
+.insights .stat-pill.sensor-b {
+    background: #eef6ff; /* slightly stronger cool pastel */
+    color: #0f172a;
+    border: 1px solid rgba(59, 130, 246, 0.12);
+    box-shadow: 0 3px 10px rgba(59,130,246,0.03);
+}
+
+.insights .forecast-list {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 8px
+}
+
+.details-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    margin-top: 1rem
+}
+
+.sensors-list #sensors-list-area {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: flex-start;
+}
+
+.sensors-list .sensor-item {
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: rgba(244,246,255,0.6);
+    min-width: 180px;
+    box-shadow: 0 6px 18px rgba(2,6,23,0.03);
+    border: 1px solid rgba(15,23,42,0.03);
+}
+
+.sensor-item .name {
+    font-weight: 700
+}
+
+.sensor-item .meta {
+    font-size: 0.85rem;
+    color: #64748b
+}
+
+.comparison-table table {
+    width: 100%;
+    border-collapse: collapse
+}
+
+.comparison-table th,
+.comparison-table td {
+    padding: 8px;
+    border-bottom: 1px solid #f1f5f9;
+    text-align: left
+}
+
+.export-note {
+    font-size: 0.85rem;
+    color: #64748b;
+    margin-top: 8px
+}
+
+/* Action buttons (styled similar to period buttons but distinct colors) */
+.btn-compare {
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    font-weight: 700
+}
+
+
+.btn-export-csv {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    font-weight: 700
+}
+
+.btn-export-xlsx {
+    background: linear-gradient(135deg, #6366f1, #4f46e5);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    font-weight: 700
+}
+
+.btn-export-pdf {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    font-weight: 700
+}
+
+.single-column .sensors-list {
+    min-height: 120px
+}
+
+.sensors-list #sensors-list-area {
+    overflow: auto
+}
+
+/* Center the actions card content and its buttons */
+.control-card.actions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center
+}
+
+.control-card.actions .actions-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap
+}
+
+/* Slightly different visual for reset button to separate from exports */
+.btn-reset {
+    background: linear-gradient(135deg,#d1974c,#ffb86b); /* soft orange */
+    padding: 8px 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(255,140,0,0.12);
+    cursor: pointer;
+    color: #0f172a;
+    font-weight: 700;
+    box-shadow: 0 3px 10px rgba(255,140,0,0.05);
+}
+
+/* Ensure export buttons have good contrast on small screens */
+.btn-export-csv,
+.btn-export-xlsx,
+.btn-export-pdf {
+    min-width: 120px
+}
+
+@media(max-width:900px) {
+    .compare-grid {
+        grid-template-columns: 1fr
+    }
+
+    .details-grid {
+        grid-template-columns: 1fr
+    }
+}
+
+/* small helpers for forecast display */
+.forecast-list {
+    margin-top: 8px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap
+}
+
+.forecast-item {
+    background: #f8fafc;
+    padding: 6px 8px;
+    border-radius: 8px;
+    border: 1px solid #eef2ff;
+    color: #0f172a
+}
+
+.forecast-item.sensor-a {
+    background: rgba(255,230,230,0.9);
+    border: 1px solid rgba(255,99,132,0.12);
+}
+.forecast-item.sensor-b {
+    background: rgba(233,243,255,0.9);
+    border: 1px solid rgba(59,130,246,0.12);
+}

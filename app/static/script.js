@@ -4,13 +4,18 @@
 // - /api/sensors/data/list?filter=1h|24h|7d|30d  -> lista de registros para graficar
 
 (() => {
-  const SENSOR_ID = 'ac1f09fffe1397c9';
   const origin = window.location.origin; // usa la IP/host actual del navegador
+  let currentSensorId = null;
+  let currentSensorName = null;
+  let currentFilter = '1h';
 
   // Elementos del DOM
   const statAvgTemp = document.getElementById('stat-avg-temp');
   const statAvgHum = document.getElementById('stat-avg-humidity');
   const statSensorCard = document.getElementById('stat-sensor');
+  let sensorSelectEl = null; // se inicializa cuando carguemos la lista de sensores
+  const statSensorNameEl = document.getElementById('stat-sensor-name');
+  const statSensorIdEl = document.getElementById('stat-sensor-id');
   const alertsList = document.getElementById('alerts-list');
 
   const deviceCards = document.querySelectorAll('.device-card');
@@ -53,6 +58,14 @@
         plugins: {
           tooltip: {
             callbacks: {
+              // título del tooltip: fecha y hora completa por punto
+              title: function(tooltipItems) {
+                try {
+                  const idx = tooltipItems && tooltipItems[0] && tooltipItems[0].dataIndex;
+                  const ts = chart && chart.data && chart.data._timestamps && chart.data._timestamps[idx];
+                  return prettyTimestamp(ts);
+                } catch (e) { return '' }
+              },
               // muestra min/max/med si están disponibles en el punto asociado
               label: function(context) {
                 const idx = context.dataIndex;
@@ -79,7 +92,35 @@
           legend: { position: 'top' }
         },
         scales: {
-          x: { ticks: { color: '#64748b' } },
+          x: {
+            ticks: {
+              color: '#64748b',
+              autoSkip: true,
+              maxRotation: 0,
+              // smart per-point formatting: show date DD/MM/YY when day changes, otherwise show time HH:MM
+              callback: function(value, index) {
+                try {
+                  const timestamps = chart && chart.data && chart.data._timestamps ? chart.data._timestamps : [];
+                  const iso = timestamps[index];
+                  if (!iso) return '';
+                  const d = new Date(iso);
+                  const h = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                  const pad = (n) => (n < 10 ? '0' + n : String(n));
+                  const date = `${pad(d.getDate())}/${pad(d.getMonth()+1)}/${String(d.getFullYear()).slice(-2)}`;
+                  // if first label or day differs from previous data point, show date + time; else show time only
+                  if (index === 0) return `${date} ${h}`;
+                  const prevIso = timestamps[index-1];
+                  if (!prevIso) return `${date} ${h}`;
+                  const pd = new Date(prevIso);
+                  if (pd.getFullYear() !== d.getFullYear() || pd.getMonth() !== d.getMonth() || pd.getDate() !== d.getDate()) {
+                    return `${date} ${h}`;
+                  }
+                  return h;
+                } catch (e) { return '' }
+              }
+            },
+            grid: { color: 'rgba(16,37,84,0.06)' }
+          },
           y: { ticks: { color: '#64748b' } }
         }
       }
@@ -90,28 +131,35 @@
   function prettyTimestamp(iso) {
     try {
       const d = new Date(iso);
-      const day = d.getDate();
-      const month = d.toLocaleString('default', { month: 'short' });
-      const time = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      return `${day} ${month} ${time}`;
+      if (isNaN(d.getTime())) return iso;
+      const pad = (n) => (n < 10 ? '0' + n : String(n));
+      const day = pad(d.getDate());
+      const month = pad(d.getMonth() + 1);
+      const year = d.getFullYear();
+      const hours = pad(d.getHours());
+      const minutes = pad(d.getMinutes());
+      // Format: DD/MM/YYYY HH:MM
+      return `${day}/${month}/${year} ${hours}:${minutes}`;
     } catch (e) { return iso; }
   }
 
   // GET /api/sensors/data/last
   async function fetchLastAndUpdate() {
     try {
-      const res = await fetch(`${origin}/api/sensors/data/last`);
+      const q = currentSensorId ? `?sensor_id=${encodeURIComponent(currentSensorId)}` : '';
+      const res = await fetch(`${origin}/api/sensors/data/last${q}`);
       if (!res.ok) return;
       const data = await res.json();
-      // Actualizar stats
-      if (statAvgTemp) statAvgTemp.textContent = data.temperatura != null ? data.temperatura.toFixed(1) + '°C' : '—';
-      if (statAvgHum) statAvgHum.textContent = data.humedad != null ? Math.round(data.humedad) + '%' : '—';
-      if (statSensorCard) statSensorCard.textContent = `${SENSOR_ID}`;
+  // Actualizar stats
+  if (statAvgTemp) statAvgTemp.textContent = data.temperatura != null ? data.temperatura.toFixed(1) + '°C' : '—';
+  if (statAvgHum) statAvgHum.textContent = data.humedad != null ? Math.round(data.humedad) + '%' : '—';
+  // No sobrescribimos el contenido de `stat-sensor` (contiene el <select>).
+  // Si queremos mostrar el nombre en otro sitio podríamos actualizarlo aquí.
 
       // Actualizar devices-grid: si alguna tarjeta tiene data-sensor-id igual, rellenar min/max
       deviceCards.forEach(card => {
         const sid = card.getAttribute('data-sensor-id');
-        if (sid === SENSOR_ID) {
+        if (sid === currentSensorId) {
           const minSp = card.querySelector('.metric-min');
           const maxSp = card.querySelector('.metric-max');
           const tempSp = card.querySelector('.metric-value.temp');
@@ -130,7 +178,8 @@
   // GET /api/sensors/data/list?filter=...
   async function fetchListAndPlot(filter = '1h') {
     try {
-      const res = await fetch(`${origin}/api/sensors/data/list?filter=${filter}`);
+      const qSensor = currentSensorId ? `&sensor_id=${encodeURIComponent(currentSensorId)}` : '';
+      const res = await fetch(`${origin}/api/sensors/data/list?filter=${filter}${qSensor}`);
       if (!res.ok) {
         console.error('list request failed', res.status);
         return;
@@ -140,32 +189,35 @@
       arr.sort((a,b) => (a.timestamp||'').localeCompare(b.timestamp||''));
 
       // Calcular estadísticos globales: max/min y contador
-      let globalMaxT = null, globalMaxH = null, globalMinT = null;
+      let globalMaxT = null, globalMaxH = null, globalMinT = null, globalMinH = null;
       arr.forEach(it => {
         if (it.maxT != null) globalMaxT = globalMaxT == null ? Number(it.maxT) : Math.max(globalMaxT, Number(it.maxT));
         if (it.maxH != null) globalMaxH = globalMaxH == null ? Number(it.maxH) : Math.max(globalMaxH, Number(it.maxH));
         if (it.minT != null) globalMinT = globalMinT == null ? Number(it.minT) : Math.min(globalMinT, Number(it.minT));
+        if (it.minH != null) globalMinH = globalMinH == null ? Number(it.minH) : Math.min(globalMinH, Number(it.minH));
       });
-      // actualizar cards globales y contador
+      // Actualizar cards globales y contador
       const maxTempEl = document.getElementById('global-max-temp');
       const maxHumEl = document.getElementById('global-max-hum');
       const minTempEl = document.getElementById('global-min-temp');
+      const minHumEl = document.getElementById('global-min-hum');
       const countEl = document.getElementById('period-count');
       if (maxTempEl) maxTempEl.textContent = globalMaxT != null ? Number(globalMaxT).toFixed(1)+'°C' : '—';
-      if (maxHumEl) maxHumEl.textContent = globalMaxH != null ? Number(globalMaxH).toFixed(0)+'%' : '—';
+      if (maxHumEl) maxHumEl.textContent = globalMaxH != null ? Number(globalMaxH).toFixed(1)+'%' : '—';
       if (minTempEl) minTempEl.textContent = globalMinT != null ? Number(globalMinT).toFixed(1)+'°C' : '—';
+      if (minHumEl) minHumEl.textContent = globalMinH != null ? Number(globalMinH).toFixed(1)+'%' : '—';
       if (countEl) countEl.textContent = arr.length;
 
-      const labels = arr.map(it => {
-        if (!it.timestamp) return '';
-        const d = new Date(it.timestamp);
-        return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      });
+      // timestamps array (ISO strings) for per-point decisions in ticks and tooltips
+      const timestamps = arr.map(it => it.timestamp || '');
       const temps = arr.map(it => it.avgT != null ? Number(it.avgT) : null);
       const hums = arr.map(it => it.avgH != null ? Number(it.avgH) : null);
 
       initChart();
-      chart.data.labels = labels;
+      // keep raw timestamps for callbacks
+      chart.data._timestamps = timestamps;
+      // use timestamps as labels; ticks callback will render them smartly
+      chart.data.labels = timestamps;
       chart.data.datasets[0].data = temps;
       chart.data.datasets[1].data = hums;
       // attach raw items for tooltip access
@@ -238,6 +290,7 @@
         <div style="font-size:0.85rem; color:#0f172a; font-weight:600;">Humedad</div>
         <div style="font-size:0.82rem; color:#475569; margin-top:4px;">Promedio: ${it.avgH != null ? String(it.avgH) : '—'}%</div>
         <div style="font-size:0.82rem; color:#475569;">Máximo: ${it.maxH != null ? String(it.maxH) : '—'}%</div>
+        <div style="font-size:0.82rem; color:#475569;">Mínimo: ${it.minH != null ? String(it.minH) : '—'}%</div>
       `;
 
       rowContainer.appendChild(tempCol);
@@ -275,22 +328,72 @@
         btn.classList.add('active');
         const txt = btn.textContent.trim().toUpperCase();
         const f = map[txt] || '1h';
+        currentFilter = f;
         fetchListAndPlot(f);
       });
     });
   }
 
+  // Cargar listado de sensores desde el backend y poblar el select
+  async function loadSensors() {
+    try {
+      const res = await fetch(`${origin}/api/sensors/info`);
+      if (!res.ok) return;
+      const list = await res.json();
+      const sel = document.getElementById('sensor-select');
+      if (!sel) return;
+      sel.innerHTML = '';
+      if (!Array.isArray(list) || list.length === 0) {
+        sel.innerHTML = '<option value="">(no hay sensores)</option>';
+        return;
+      }
+      list.forEach((s, idx) => {
+        const opt = document.createElement('option');
+        opt.value = s.sensor_id;
+        opt.textContent = s.name || s.sensor_id;
+        sel.appendChild(opt);
+        if (idx === 0) {
+          currentSensorId = s.sensor_id;
+          currentSensorName = s.name || s.sensor_id;
+        }
+      });
+
+      // seleccionar el primero y disparar carga inicial
+      sel.value = currentSensorId;
+      sensorSelectEl = sel;
+      // mostrar nombre e id en la tarjeta grande
+      if (statSensorNameEl) statSensorNameEl.textContent = currentSensorName || currentSensorId || '—';
+      if (statSensorIdEl) statSensorIdEl.textContent = currentSensorId || '';
+      sel.addEventListener('change', (e) => {
+        currentSensorId = e.target.value;
+        const selected = list.find(x=>x.sensor_id===currentSensorId);
+        currentSensorName = selected ? (selected.name || selected.sensor_id) : currentSensorId;
+        if (statSensorNameEl) statSensorNameEl.textContent = currentSensorName || currentSensorId || '—';
+        if (statSensorIdEl) statSensorIdEl.textContent = currentSensorId || '';
+        // refrescar la info manteniendo el filtro actual
+        fetchLastAndUpdate();
+        fetchListAndPlot(currentFilter || '1h');
+      });
+
+      // Inicializar primeras cargas
+      fetchLastAndUpdate();
+      fetchListAndPlot(currentFilter || '1h');
+    } catch (e) {
+      console.error('loadSensors error', e);
+    }
+  }
+
   // Inicialización
   document.addEventListener('DOMContentLoaded', () => {
-    initChart();
-    setupTimeButtons();
-    // default 1h
-    const defaultBtn = Array.from(document.querySelectorAll('.time-btn')).find(b => b.textContent.trim().toUpperCase() === '1H');
-    if (defaultBtn) { document.querySelectorAll('.time-btn').forEach(b=>b.classList.remove('active')); defaultBtn.classList.add('active'); }
-    fetchLastAndUpdate();
-    fetchListAndPlot('1h');
-    // run entrance animations
-    animateEntrance();
+  initChart();
+  setupTimeButtons();
+  // default 1h
+  const defaultBtn = Array.from(document.querySelectorAll('.time-btn')).find(b => b.textContent.trim().toUpperCase() === '1H');
+  if (defaultBtn) { document.querySelectorAll('.time-btn').forEach(b=>b.classList.remove('active')); defaultBtn.classList.add('active'); }
+  // cargar sensores y luego inicializar el dashboard con el primero
+  loadSensors();
+  // run entrance animations
+  animateEntrance();
   });
 
   // Envío de formulario para crear dispositivo

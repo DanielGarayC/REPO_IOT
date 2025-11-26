@@ -16,21 +16,31 @@ PORT = os.getenv("PORT", 5000)
 app = Flask(__name__)
 
 # DynamoDB y sensor fijo (solo por la presentación parcial)
+# Tabla de datos y tabla de información de sensores
 DYNAMODB_TABLE = os.getenv("SENSOR_DATA", "SensorData")
 SENSOR_ID = os.getenv("SENSOR_ID", "ac1f09fffe1397c9")
+SENSOR_INFO_TABLE = os.getenv("SENSOR_INFO_TABLE", "SensorInfo")
 
 # Inicialización del cliente DynamoDB (usa credenciales de entorno)
-dynamodb = boto3.resource('dynamodb', region_name='us-east-2')
+AWS_REGION = os.getenv("AWS_DEFAULT_REGION", "us-east-2")
+dynamodb = boto3.resource('dynamodb', region_name=AWS_REGION)
 table = dynamodb.Table(DYNAMODB_TABLE)
+table_info = dynamodb.Table(SENSOR_INFO_TABLE)
 
 # ****************************************
 # -> RUTAS
 # ****************************************
 
 # Ruta principal - Dashboard
-@app.route("/")
+@app.route("/dashboard")
 def dashboard():
     return render_template("dashboard.html")
+
+
+@app.route('/comparar')
+def comparar():
+    """Vista de comparación entre sensores."""
+    return render_template('comparison.html')
 
 # Ruta health check
 @app.route("/health")
@@ -40,16 +50,17 @@ def health_check():
 # API para últimos datos sobre el sensor
 @app.route('/api/sensors/data/last')
 def get_last_from_db():
-    """Consultar DynamoDB y devolver el último registro para el SENSOR_ID fijo (luego hay que cambiar para que paso como query param uu).
+    """Consultar DynamoDB y devolver el último registro para un sensor.
 
-    Usa Query con ScanIndexForward=False y Limit=1 para obtener el ítem más reciente
-    ordenado por la clave de ordenamiento 'timestamp'. Responde en JSON con los
-    campos principales.
+    Acepta query param `sensor_id`. Si no se provee, usa la variable de
+    entorno por defecto. Devuelve el ítem más reciente (por 'timestamp').
     """
+
+    sensor_id = request.args.get('sensor_id', SENSOR_ID)
 
     try:
         resp = table.query(
-            KeyConditionExpression=Key('sensor_id').eq(SENSOR_ID),
+            KeyConditionExpression=Key('sensor_id').eq(sensor_id),
             ScanIndexForward=False,  # newest first
             Limit=1
         )
@@ -74,6 +85,126 @@ def get_last_from_db():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+
+# API para listar sensores disponibles (SensorInfo)
+@app.route('/api/sensors/info')
+def get_sensors_info():
+    """Devuelve la lista de sensores registrados en la tabla SensorInfo.
+
+    Retorna objetos simples con `sensor_id` y `name`. Usa scan con paginación
+    para cubrir tablas pequeñas/medianas.
+    """
+    try:
+        sensors = []
+        kwargs = {}
+        while True:
+            resp = table_info.scan(**kwargs)
+            for it in resp.get('Items', []):
+                sensors.append({
+                    'sensor_id': it.get('sensor_id'),
+                    'name': it.get('name') or it.get('sensor_id'),
+                    'location': it.get('location') or ''
+                })
+            if 'LastEvaluatedKey' in resp:
+                kwargs['ExclusiveStartKey'] = resp['LastEvaluatedKey']
+            else:
+                break
+
+        # Ordenar por name para estabilidad en el frontend
+        sensors.sort(key=lambda x: x.get('name') or x.get('sensor_id'))
+        return jsonify(sensors)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/sensors/data/multi')
+def multi_sensors_data():
+    """Devuelve series de datos para varios sensores en un solo request.
+
+    Query params:
+      - ids: coma-separados sensor_id (obligatorio)
+      - filter: 1h|24h|7d|30d (opcional, por defecto 24h)
+
+    Respuesta: { sensor_id: [items...], ... }
+    """
+    ids_param = request.args.get('ids')
+    if not ids_param:
+        return jsonify({"error": "Parámetro 'ids' requerido (coma-separados)."}), 400
+
+    filter_param = request.args.get('filter', '24h')
+    mapping = {
+        '1h': timedelta(hours=1),
+        '24h': timedelta(hours=24),
+        '7d': timedelta(days=7),
+        '30d': timedelta(days=30)
+    }
+    if filter_param not in mapping:
+        return jsonify({"error": "Filtro inválido. Usa 1h,24h,7d o 30d."}), 400
+
+    ids = [s.strip() for s in ids_param.split(',') if s.strip()]
+    out = {}
+    try:
+        for sensor_id in ids:
+            # compute reference datetime from latest item for that sensor
+            try:
+                latest_resp = table.query(
+                    KeyConditionExpression=Key('sensor_id').eq(sensor_id),
+                    ScanIndexForward=False,
+                    Limit=1
+                )
+                latest_items = latest_resp.get('Items', [])
+                if latest_items:
+                    last_ts = latest_items[0].get('timestamp')
+                    try:
+                        ref_dt = datetime.fromisoformat(last_ts)
+                    except Exception:
+                        ref_dt = datetime.utcnow()
+                else:
+                    lima_now = datetime.now(ZoneInfo('America/Lima'))
+                    ref_dt = lima_now.astimezone(ZoneInfo('UTC')).replace(tzinfo=None)
+            except Exception:
+                lima_now = datetime.now(ZoneInfo('America/Lima'))
+                ref_dt = lima_now.astimezone(ZoneInfo('UTC')).replace(tzinfo=None)
+
+            cutoff = ref_dt - mapping[filter_param]
+            cutoff_str = cutoff.isoformat()
+
+            # query items
+            items = []
+            kwargs_q = {
+                'KeyConditionExpression': Key('sensor_id').eq(sensor_id) & Key('timestamp').gte(cutoff_str),
+                'ScanIndexForward': True
+            }
+            while True:
+                resp = table.query(**kwargs_q)
+                items.extend(resp.get('Items', []))
+                if 'LastEvaluatedKey' in resp:
+                    kwargs_q['ExclusiveStartKey'] = resp['LastEvaluatedKey']
+                else:
+                    break
+
+            # normalize
+            normalized = []
+            for it in items:
+                normalized.append({
+                    'sensor_id': it.get('sensor_id'),
+                    'timestamp': it.get('timestamp'),
+                    'avgT': float(it.get('avgT')) if it.get('avgT') is not None else None,
+                    'avgH': float(it.get('avgH')) if it.get('avgH') is not None else None,
+                    'maxT': float(it.get('maxT')) if it.get('maxT') is not None else None,
+                    'maxH': float(it.get('maxH')) if it.get('maxH') is not None else None,
+                    'medT': float(it.get('medT')) if it.get('medT') is not None else None,
+                    'medH': float(it.get('medH')) if it.get('medH') is not None else None,
+                    'minT': float(it.get('minT')) if it.get('minT') is not None else None,
+                    'minH': float(it.get('minH')) if it.get('minH') is not None else None
+                })
+            normalized.sort(key=lambda x: x.get('timestamp') or '')
+            out[sensor_id] = normalized
+
+        return jsonify(out)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 # API para listar datos del sensor con filtro de tiempo
 @app.route('/api/sensors/data/list')
 def list_sensors():
@@ -95,9 +226,11 @@ def list_sensors():
     if filter_param not in mapping:
         return jsonify({"error": "Filtro inválido. Usa 1h,24h,7d o 30d."}), 400
 
+    sensor_id = request.args.get('sensor_id', SENSOR_ID)
+
     try:
         latest_resp = table.query(
-            KeyConditionExpression=Key('sensor_id').eq(SENSOR_ID),
+            KeyConditionExpression=Key('sensor_id').eq(sensor_id),
             ScanIndexForward=False,
             Limit=1
         )
@@ -121,7 +254,7 @@ def list_sensors():
     try:
         items = []
         kwargs = {
-            'KeyConditionExpression': Key('sensor_id').eq(SENSOR_ID) & Key('timestamp').gte(cutoff_str),
+            'KeyConditionExpression': Key('sensor_id').eq(sensor_id) & Key('timestamp').gte(cutoff_str),
             'ScanIndexForward': True
         }
 
@@ -145,7 +278,8 @@ def list_sensors():
                 'maxH': float(it.get('maxH')) if it.get('maxH') is not None else None,
                 'medT': float(it.get('medT')) if it.get('medT') is not None else None,
                 'medH': float(it.get('medH')) if it.get('medH') is not None else None,
-                'minT': float(it.get('minT')) if it.get('minT') is not None else None
+                'minT': float(it.get('minT')) if it.get('minT') is not None else None,
+                'minH': float(it.get('minH')) if it.get('minH') is not None else None
             })
 
         normalized.sort(key=lambda x: x.get('timestamp') or '')
