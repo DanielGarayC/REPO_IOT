@@ -1,7 +1,7 @@
 // script.js
 // Lógica del frontend para consumir los endpoints del Flask y actualizar la UI uu
-// - /api/sensors/last  -> último registro (avgT, avgH, min/max)
-// - /api/sensors/list?filter=1h|24h|7d|30d  -> lista de registros para graficar
+// - /api/sensors/data/last  -> último registro (avgT, avgH, min/max)
+// - /api/sensors/data/list?filter=1h|24h|7d|30d  -> lista de registros para graficar
 
 (() => {
   const SENSOR_ID = 'ac1f09fffe1397c9';
@@ -97,10 +97,10 @@
     } catch (e) { return iso; }
   }
 
-  // GET /api/sensors/last
+  // GET /api/sensors/data/last
   async function fetchLastAndUpdate() {
     try {
-      const res = await fetch(`${origin}/api/sensors/last`);
+      const res = await fetch(`${origin}/api/sensors/data/last`);
       if (!res.ok) return;
       const data = await res.json();
       // Actualizar stats
@@ -127,10 +127,10 @@
     }
   }
 
-  // GET /api/sensors/list?filter=...
+  // GET /api/sensors/data/list?filter=...
   async function fetchListAndPlot(filter = '1h') {
     try {
-      const res = await fetch(`${origin}/api/sensors/list?filter=${filter}`);
+      const res = await fetch(`${origin}/api/sensors/data/list?filter=${filter}`);
       if (!res.ok) {
         console.error('list request failed', res.status);
         return;

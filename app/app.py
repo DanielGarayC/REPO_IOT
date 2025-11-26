@@ -38,7 +38,7 @@ def health_check():
     return "OK", 200
 
 # API para últimos datos sobre el sensor
-@app.route('/api/sensors/last')
+@app.route('/api/sensors/data/last')
 def get_last_from_db():
     """Consultar DynamoDB y devolver el último registro para el SENSOR_ID fijo (luego hay que cambiar para que paso como query param uu).
 
@@ -75,7 +75,7 @@ def get_last_from_db():
         return jsonify({"error": str(e)}), 500
 
 # API para listar datos del sensor con filtro de tiempo
-@app.route('/api/sensors/list')
+@app.route('/api/sensors/data/list')
 def list_sensors():
     """Devuelve una lista de registros para SENSOR_ID filtrada por el parámetro de consulta `filter`.
 
@@ -231,9 +231,6 @@ def crear_dispositivo():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
-
-
 
 # ****************************************
 # -> EJECUCIÓN PRINCIPAL    
